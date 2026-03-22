@@ -71,11 +71,8 @@ app.use(limiter);
 // Parse JSON bodies
 app.use(express.json());
 
-// ============ ROUTES ============
-
-// GET /api/oil-prices - Protected with Bearer Token
-app.get('/api/oil-prices', (req, res) => {
-  // 4. BEARER TOKEN AUTHENTICATION
+// ============ 4. BEARER TOKEN AUTHENTICATION MIDDLEWARE ============
+const bearerAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -88,6 +85,13 @@ app.get('/api/oil-prices', (req, res) => {
     return res.status(401).json({ error: 'Unauthorized: Invalid Bearer token' });
   }
 
+  next();
+};
+
+// ============ ROUTES ============
+
+// GET /api/oil-prices - Protected with Bearer Token
+app.get('/api/oil-prices', bearerAuth, (req, res) => {
   res.json(oilPriceData);
 });
 
@@ -179,9 +183,11 @@ app.get('/dashboard', (req, res) => {
   `);
 });
 
-// GET /logout - Clear session and redirect
+// GET /logout - Clear Basic Auth session
 app.get('/logout', (req, res) => {
-  res.send(`
+  // Force browser to drop cached Basic Auth credentials by sending 401 with WWW-Authenticate header
+  res.set('WWW-Authenticate', 'Basic realm="Dashboard"');
+  res.status(401).send(`
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -222,8 +228,8 @@ app.get('/logout', (req, res) => {
     <body>
       <div class="container">
         <h1>✓ Logged Out Successfully</h1>
-        <p>You have been logged out from the dashboard.</p>
-        <a href="/">Return Home</a>
+        <p>Your session has been cleared. Cached credentials have been removed.</p>
+        <a href="/dashboard">Login Again</a>
       </div>
     </body>
     </html>
@@ -255,12 +261,6 @@ app.get('/', (req, res) => {
           border-radius: 8px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        code {
-          background: #f0f0f0;
-          padding: 2px 6px;
-          border-radius: 3px;
-          font-family: 'Courier New', monospace;
-        }
         .info { color: #666; line-height: 1.6; }
         a { color: #4CAF50; text-decoration: none; }
         a:hover { text-decoration: underline; }
@@ -269,18 +269,22 @@ app.get('/', (req, res) => {
     <body>
       <h1>⚡ Energy API</h1>
       <div class="section">
-        <h2>API Endpoints</h2>
+        <h2>Available Endpoints</h2>
         <div class="info">
           <p><strong>GET /api/oil-prices</strong><br>
-          Protected with Bearer Token. Returns oil price data.<br>
-          Header: <code>Authorization: Bearer secure-oil-api-key-2026</code></p>
+          Secured with Bearer Token. Returns global oil price data in JSON format.</p>
           
           <p><strong>GET /dashboard</strong><br>
-          Protected with Basic Auth (admin / password123).<br>
-          Displays oil prices in a table format.</p>
+          Secured with Basic Authentication. Displays oil prices in an interactive table.</p>
           
           <p><strong>GET /logout</strong><br>
-          Logout from the dashboard session.</p>
+          Clears your session and authentication credentials.</p>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Documentation</h2>
+        <div class="info">
+          <p>See <strong>README.md</strong> for complete API documentation, credentials, and testing instructions.</p>
         </div>
       </div>
     </body>
