@@ -45,12 +45,28 @@ const oilPriceData = {
 // 1. IP FILTERING MIDDLEWARE
 app.use((req, res, next) => {
   const clientIp = req.ip;
-  // Allow only localhost (127.0.0.1 or ::1)
-  if (clientIp !== '127.0.0.1' && clientIp !== '::1') {
+  // Allow only localhost (127.0.0.1, ::1, or IPv6-mapped IPv4)
+  const isLocalhost = clientIp === '127.0.0.1' || 
+                      clientIp === '::1' || 
+                      clientIp === '::ffff:127.0.0.1';
+  
+  if (!isLocalhost) {
     return res.status(403).json({ error: 'Forbidden: IP not allowed' });
   }
   next();
 });
+
+
+app.use((req, res, next) => {
+  const clientIp = req.ip;
+  const allowedIPs = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+
+  if (!allowedIPs.includes(clientIp)) {
+    return res.status(403).json({ error: 'Forbidden: IP not allowed' });
+  }
+  next();
+});
+
 
 // 2. CORS MIDDLEWARE
 app.use(cors({
@@ -60,15 +76,14 @@ app.use(cors({
 
 // 3. RATE LIMITING MIDDLEWARE
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // 10 requests per windowMs
+  windowMs: 1 * 60 * 1000, 
+  max: 10, 
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
 });
 app.use(limiter);
 
-// Parse JSON bodies
 app.use(express.json());
 
 // ============ 4. BEARER TOKEN AUTHENTICATION MIDDLEWARE ============
@@ -79,7 +94,7 @@ const bearerAuth = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized: Missing or invalid Bearer token' });
   }
 
-  const token = authHeader.substring(7); // Remove "Bearer " prefix
+  const token = authHeader.substring(7); 
 
   if (token !== BEARER_TOKEN) {
     return res.status(401).json({ error: 'Unauthorized: Invalid Bearer token' });
