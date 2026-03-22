@@ -1,199 +1,114 @@
-# Express Middleware Assignment - Oil Prices API
+# Oil Prices API - Express.js with Middleware
 
-A secure Express.js API with multi-layered middleware for handling oil price data.
+A secure API built with Express that demonstrates middleware-based authentication, rate limiting, IP filtering, and CORS protection.
 
-## Features
+## What This Does
 
-- **IP Filtering**: Only allows requests from localhost (127.0.0.1 or ::1)
-- **CORS**: Restricts access to local development origin
-- **Rate Limiting**: Enforces 10 requests per minute
-- **Bearer Token Authentication**: Protects the `/api/oil-prices` endpoint
-- **Basic Authentication**: Protects the `/dashboard` endpoint with username/password
-- **Clean UI**: Simple HTML dashboards for visualization
+- IP filtering - only localhost requests allowed
+- CORS policy - restricted to localhost:3000
+- Rate limiting - 10 requests per minute
+- Bearer token auth for the API
+- Basic auth for the dashboard
+- Login page with form-based authentication
 
-## Installation
+## Setup
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/express-middleware-assignment.git
-   cd express-middleware-assignment
-   ```
+Clone and install:
+```bash
+git clone https://github.com/yourusername/express-middleware-assignment.git
+cd express-middleware-assignment
+npm install
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Run It
 
-## Running the Server
-
-Start the development server:
 ```bash
 npm start
 ```
 
-The server will run on `http://localhost:3000`
+Server starts at `http://localhost:3000`
 
-You should see:
-```
-✓ Server running on http://localhost:3000
+## Endpoints
 
-📋 API Configuration:
-   Bearer Token: secure-oil-api-key-2026
-   Dashboard User: admin
-   Dashboard Password: password123
+### GET `/api/oil-prices`
+Returns oil price data. Requires bearer token.
 
-📝 Endpoints:
-   GET http://localhost:3000/api/oil-prices (requires Bearer token)
-   GET http://localhost:3000/dashboard (requires Basic auth)
-   GET http://localhost:3000/logout
-```
-
-## API Endpoints
-
-### 1. GET `/api/oil-prices`
-**Protection**: Bearer Token Authentication
-
-Returns current oil price data in JSON format.
-
-**Required Header**:
+Header:
 ```
 Authorization: Bearer secure-oil-api-key-2026
 ```
 
-**Example Request** (using curl):
+Test:
 ```bash
 curl -H "Authorization: Bearer secure-oil-api-key-2026" http://localhost:3000/api/oil-prices
 ```
 
-**Example Response**:
-```json
-{
-  "market": "Global Energy Exchange",
-  "last_updated": "2026-03-15T12:55:00Z",
-  "currency": "USD",
-  "data": [
-    {
-      "symbol": "WTI",
-      "name": "West Texas Intermediate",
-      "price": 78.45,
-      "change": 0.12
-    },
-    {
-      "symbol": "BRENT",
-      "name": "Brent Crude",
-      "price": 82.30,
-      "change": -0.05
-    },
-    {
-      "symbol": "NAT_GAS",
-      "name": "Natural Gas",
-      "price": 2.15,
-      "change": 0.02
-    }
-  ]
-}
+### GET `/login`
+Login page with form. Enter `admin` / `password123`.
+
+### GET `/dashboard`
+Oil price data displayed in a table. Requires basic auth.
+
+Test:
+```bash
+curl -u admin:password123 http://localhost:3000/dashboard
 ```
 
-### 2. GET `/dashboard`
-**Protection**: Basic Authentication
+### GET `/logout`
+Clears your session.
 
-Displays an HTML dashboard showing oil prices in a table format.
+## Security
 
-**Credentials**:
+**Middleware stack (in order):**
+1. IP filtering - localhost only
+2. CORS - origin check
+3. Rate limiting - 10 req/min
+4. Authentication - Bearer token or Basic auth
+
+**Credentials:**
+- Bearer Token: `secure-oil-api-key-2026`
 - Username: `admin`
 - Password: `password123`
 
-**Example Request** (using curl):
+## Testing
+
+Token tests:
 ```bash
-curl -u admin:password123 http://localhost:3000/dashboard
-```
-
-### 3. GET `/logout`
-Clears the session and displays a logout confirmation page.
-
-## Security Features
-
-### Middleware Order
-1. **IP Filtering** - Blocks non-localhost traffic (403 Forbidden)
-2. **CORS** - Restricts origin to `http://localhost:3000`
-3. **Rate Limiting** - Enforces 10 requests per 60 seconds
-4. **Authentication** - Bearer Token on API endpoint, Basic Auth on dashboard
-
-### Bearer Token
-```
-secure-oil-api-key-2026
-```
-
-### Dashboard Credentials
-```
-Username: admin
-Password: password123
-```
-
-## Testing the API
-
-### Test Bearer Token Protection
-```bash
-# Without token (will fail)
+# No token (fails)
 curl http://localhost:3000/api/oil-prices
 
-# With token (will succeed)
+# With token (works)
 curl -H "Authorization: Bearer secure-oil-api-key-2026" http://localhost:3000/api/oil-prices
-
-# With wrong token (will fail)
-curl -H "Authorization: Bearer wrong-token" http://localhost:3000/api/oil-prices
 ```
 
-### Test Rate Limiting
-Make 11 requests within 1 minute - the 11th will be rate limited:
+Basic auth tests:
 ```bash
-for i in {1..15}; do 
-  curl -H "Authorization: Bearer secure-oil-api-key-2026" http://localhost:3000/api/oil-prices
-  sleep 0.1
-done
-```
-
-### Test Basic Auth
-```bash
-# Without credentials (will fail)
+# Wrong creds (fails)
 curl http://localhost:3000/dashboard
 
-# With correct credentials (will succeed)
+# Right creds (works)
 curl -u admin:password123 http://localhost:3000/dashboard
-
-# With wrong credentials (will fail)
-curl -u admin:wrongpassword http://localhost:3000/dashboard
 ```
 
-### Test IP Filtering
-IP filtering is enforced server-side. Only localhost (127.0.0.1 or ::1) requests are allowed.
+Rate limit - make 11+ requests in 1 minute to see it trigger.
 
-## Project Structure
+## Files
 
-```
-express-middleware-assignment/
-├── app.js           # Main application with all middleware
-├── package.json     # Dependencies and scripts
-└── README.md        # This file
-```
+- `app.js` - main server
+- `package.json` - dependencies
 
 ## Dependencies
 
-- **express**: Web framework
-- **cors**: Cross-Origin Resource Sharing middleware
-- **express-rate-limit**: Rate limiting middleware
-- **basic-auth**: Basic authentication parser
+- express
+- cors
+- express-rate-limit
+- basic-auth
 
-## Security Notes
+## Notes
 
-⚠️ **For production use**:
-- Use environment variables for sensitive data (Bearer token, credentials)
-- Implement HTTPS/SSL
-- Use more sophisticated authentication methods
-- Add input validation and sanitization
-- Implement proper logging and monitoring
-- Use HTTPS-only cookies for session management
-
-## License
-
-MIT
+This is for learning purposes. For production:
+- Use environment variables for tokens/passwords
+- Add HTTPS
+- Better auth methods
+- Input validation
+- Proper logging
