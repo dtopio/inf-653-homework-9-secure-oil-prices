@@ -1,0 +1,22 @@
+{
+  "name": "express-middleware-assignment",
+  "version": "1.0.0",
+  "description": "Secure Express.js API with middleware for oil prices",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": ["express", "middleware", "security"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.1.5",
+    "basic-auth": "^2.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
