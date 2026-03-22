@@ -85,6 +85,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ============ 4. BEARER TOKEN AUTHENTICATION MIDDLEWARE ============
 const bearerAuth = (req, res, next) => {
@@ -105,9 +106,183 @@ const bearerAuth = (req, res, next) => {
 
 // ============ ROUTES ============
 
+// GET /login - Show login form
+app.get('/login', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Login - Energy Dashboard</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          margin: 0;
+        }
+        .container {
+          background: white;
+          padding: 40px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          width: 320px;
+        }
+        h2 { 
+          color: #333; 
+          margin: 0 0 30px 0; 
+          text-align: center;
+          font-size: 24px;
+        }
+        .error { 
+          color: #d32f2f;
+          background: #ffebee;
+          padding: 10px;
+          border-radius: 4px;
+          margin-bottom: 20px;
+          text-align: center;
+          font-size: 14px;
+        }
+        label { 
+          display: block;
+          color: #555; 
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 6px;
+        }
+        input {
+          width: 100%;
+          padding: 12px;
+          margin-bottom: 16px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+          font-size: 14px;
+        }
+        input:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        button {
+          width: 100%;
+          padding: 12px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: 500;
+          transition: transform 0.2s;
+        }
+        button:hover { 
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>⚡ Energy Dashboard</h2>
+        ${req.query.error ? '<div class="error">Invalid username or password</div>' : ''}
+        <form method="POST" action="/login">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter username" required />
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter password" required />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// POST /login - Handle login form submission
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === DASHBOARD_USER && password === DASHBOARD_PASSWORD) {
+    // Redirect to dashboard with Basic Auth credentials
+    res.redirect(`http://${DASHBOARD_USER}:${DASHBOARD_PASSWORD}@localhost:3000/dashboard`);
+  } else {
+    res.redirect('/login?error=1');
+  }
+});
+
 // GET /api/oil-prices - Protected with Bearer Token
 app.get('/api/oil-prices', bearerAuth, (req, res) => {
   res.json(oilPriceData);
+});
+// GET /login - Show login form
+app.get('/login', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Login</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          background: #f5f5f5;
+          margin: 0;
+        }
+        .container {
+          background: white;
+          padding: 40px;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          width: 300px;
+        }
+        h2 { color: #333; margin-bottom: 20px; text-align: center; }
+        input {
+          width: 100%;
+          padding: 10px;
+          margin: 8px 0 16px 0;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        button {
+          width: 100%;
+          padding: 10px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+        }
+        button:hover { background: #45a049; }
+        .error { color: red; text-align: center; margin-bottom: 10px; }
+        label { color: #555; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>⚡ Energy Dashboard</h2>
+        ${req.query.error ? '<p class="error">Invalid username or password</p>' : ''}
+        <form method="POST" action="/login">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="Enter username" required />
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Enter password" required />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </body>
+    </html>
+  `);
 });
 
 // GET /dashboard - Protected with Basic Auth
@@ -244,7 +419,7 @@ app.get('/logout', (req, res) => {
       <div class="container">
         <h1>✓ Logged Out Successfully</h1>
         <p>Your session has been cleared. Cached credentials have been removed.</p>
-        <a href="/dashboard">Login Again</a>
+        <a href="/login">Login Again</a>
       </div>
     </body>
     </html>
@@ -297,9 +472,10 @@ app.get('/', (req, res) => {
         </div>
       </div>
       <div class="section">
-        <h2>Documentation</h2>
+        <h2>Quick Links</h2>
         <div class="info">
-          <p>See <strong>README.md</strong> for complete API documentation, credentials, and testing instructions.</p>
+          <p><a href="/login">→ Login to Dashboard</a></p>
+          <p style="margin-top: 15px; font-size: 14px; color: #999;">See <strong>README.md</strong> for complete API documentation, credentials, and testing instructions.</p>
         </div>
       </div>
     </body>
